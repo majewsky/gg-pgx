@@ -4,7 +4,7 @@ go 1.26
 
 require (
 	github.com/jackc/pgx/v5 v5.10.0
-	go.xyrillian.de/gg v1.11.2-0.20260730175754-81e32cec3629
+	go.xyrillian.de/gg v1.11.2-0.20260730205329-a9c88a040a3c
 )
 
 require (

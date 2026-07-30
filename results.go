@@ -31,7 +31,7 @@ func (r wrappedRows) Columns() ([]string, error) {
 // Close implements the [gsql.Rows] interface.
 func (r wrappedRows) Close() error {
 	r.inner.Close()
-	return nil
+	return r.inner.Err()
 }
 
 // Err implements the [gsql.Rows] interface.
