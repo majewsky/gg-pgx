@@ -16,8 +16,6 @@ import (
 	"go.xyrillian.de/gg/gsql"
 )
 
-// TODO: test coverage (via gg/pgruntime)
-
 // NOTE: The internal structure of these types follows the pattern established
 //       by (and explained in) `std.go` of `go.xyrillian.de/gg/gsql`.
 
@@ -35,13 +33,13 @@ func NewConn(conn *pgx.Conn) *Conn {
 	return &Conn{conn, connHandle{conn}}
 }
 
-// Begin is like [pgx.Conn.Begin], but wraps the resulting transaction into a [Handle].
+// Begin is like [pgx.Conn.Begin], but wraps the resulting transaction into a [gsql.Handle].
 func (conn *Conn) Begin(ctx context.Context) (*Tx, error) {
 	tx, err := conn.Conn.Begin(ctx)
 	return maybeNewTx(tx), err
 }
 
-// BeginTx is like [pgx.Conn.BeginTx], but wraps the resulting transaction into a [Handle].
+// BeginTx is like [pgx.Conn.BeginTx], but wraps the resulting transaction into a [gsql.Handle].
 func (conn *Conn) BeginTx(ctx context.Context, opts pgx.TxOptions) (*Tx, error) {
 	tx, err := conn.Conn.BeginTx(ctx, opts)
 	return maybeNewTx(tx), err
@@ -61,13 +59,13 @@ func NewPool(pool *pgxpool.Pool) *Pool {
 	return &Pool{pool, poolHandle{pool}}
 }
 
-// Acquire is like [pgxpool.Pool.Acquire], but wraps the resulting connection into a [Handle].
+// Acquire is like [pgxpool.Pool.Acquire], but wraps the resulting connection into a [gsql.Handle].
 func (pool *Pool) Acquire(ctx context.Context) (*PoolConn, error) {
 	conn, err := pool.Pool.Acquire(ctx)
 	return maybe(NewPoolConn, conn), err
 }
 
-// AcquireAllIdle is like [pgxpool.Pool.AcquireAllIdle], but wraps the resulting connections into [Handle] instances.
+// AcquireAllIdle is like [pgxpool.Pool.AcquireAllIdle], but wraps the resulting connections into [gsql.Handle] instances.
 func (pool *Pool) AcquireAllIdle(ctx context.Context) []*PoolConn {
 	conns := pool.Pool.AcquireAllIdle(ctx)
 	result := make([]*PoolConn, len(conns))
@@ -77,20 +75,20 @@ func (pool *Pool) AcquireAllIdle(ctx context.Context) []*PoolConn {
 	return result
 }
 
-// AcquireFunc is like [pgxpool.Pool.AcquireFunc], but wraps the resulting connection into a [Handle].
+// AcquireFunc is like [pgxpool.Pool.AcquireFunc], but wraps the resulting connection into a [gsql.Handle].
 func (pool *Pool) AcquireFunc(ctx context.Context, f func(*PoolConn) error) error {
 	return pool.Pool.AcquireFunc(ctx, func(conn *pgxpool.Conn) error {
 		return f(maybe(NewPoolConn, conn))
 	})
 }
 
-// Begin is like [pgxpool.Pool.Begin], but wraps the resulting transaction into a [Handle].
+// Begin is like [pgxpool.Pool.Begin], but wraps the resulting transaction into a [gsql.Handle].
 func (pool *Pool) Begin(ctx context.Context) (*Tx, error) {
 	tx, err := pool.Pool.Begin(ctx)
 	return maybeNewTx(tx), err
 }
 
-// BeginTx is like [pgxpool.Pool.BeginTx], but wraps the resulting transaction into a [Handle].
+// BeginTx is like [pgxpool.Pool.BeginTx], but wraps the resulting transaction into a [gsql.Handle].
 func (pool *Pool) BeginTx(ctx context.Context, opts pgx.TxOptions) (*Tx, error) {
 	tx, err := pool.Pool.BeginTx(ctx, opts)
 	return maybeNewTx(tx), err
@@ -110,26 +108,26 @@ func NewPoolConn(pool *pgxpool.Conn) *PoolConn {
 	return &PoolConn{pool, poolConnHandle{pool}}
 }
 
-// Begin is like [pgxpool.Conn.Begin], but wraps the resulting transaction into a [Handle].
+// Begin is like [pgxpool.Conn.Begin], but wraps the resulting transaction into a [gsql.Handle].
 func (conn *PoolConn) Begin(ctx context.Context) (*Tx, error) {
 	tx, err := conn.Conn.Begin(ctx)
 	return maybeNewTx(tx), err
 }
 
-// BeginTx is like [pgxpool.Conn.BeginTx], but wraps the resulting transaction into a [Handle].
+// BeginTx is like [pgxpool.Conn.BeginTx], but wraps the resulting transaction into a [gsql.Handle].
 func (conn *PoolConn) BeginTx(ctx context.Context, opts pgx.TxOptions) (*Tx, error) {
 	tx, err := conn.Conn.BeginTx(ctx, opts)
 	return maybeNewTx(tx), err
 }
 
-// GetConn is like [pgxpool.Conn.Conn], but wraps the resulting connection into a [Handle].
+// GetConn is like [pgxpool.Conn.Conn], but wraps the resulting connection into a [gsql.Handle].
 //
 // This method should be called "Conn", but one of the embedded fields of this type blocks that name.
 func (conn *PoolConn) GetConn() *Conn {
 	return maybe(NewConn, conn.Conn.Conn())
 }
 
-// Hijack is like [pgxpool.Conn.Conn], but wraps the resulting connection into a [Handle].
+// Hijack is like [pgxpool.Conn.Conn], but wraps the resulting connection into a [gsql.Handle].
 func (conn *PoolConn) Hijack() *Conn {
 	return maybe(NewConn, conn.Conn.Hijack())
 }
@@ -143,12 +141,12 @@ type Tx struct {
 	gsql.Handle
 }
 
-// NewTx wraps an instance of [pgx.Tx] into the [Tx] type that implements [Handle].
+// NewTx wraps an instance of [pgx.Tx] into the [Tx] type that implements [gsql.Handle].
 func NewTx(tx pgx.Tx) *Tx {
 	return &Tx{tx, txHandle{tx}}
 }
 
-// Conn is like the Conn() method of [pgx.Tx], but wraps the resulting connection into a [Handle].
+// Conn is like the Conn() method of [pgx.Tx], but wraps the resulting connection into a [gsql.Handle].
 func (t *Tx) Conn() *Conn {
 	return maybe(NewConn, t.Tx.Conn())
 }

@@ -76,7 +76,7 @@ func (h poolHandle) GSQLPrepare(ctx context.Context, query string, repeated bool
 		conn.Release()
 		return err
 	}
-	return wrappedPreparedStatement{ctx, stmt, h.inner, deallocate}, nil
+	return wrappedPreparedStatement{ctx, stmt, conn, deallocate}, nil
 }
 
 // GSQLQuery implements the [gsql.Handle] interface.
