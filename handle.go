@@ -41,7 +41,13 @@ func (h connHandle) GSQLClose(ctx context.Context) error {
 
 // GSQLTransact implements the [gsql.ConnectionHandle] interface.
 func (h connHandle) GSQLTransact(ctx context.Context, action func(tx gsql.Handle) error) error {
-	tx, err := h.inner.Begin(ctx)
+	return withinTransactionOfConn(ctx, h.inner, func(tx *Tx) error {
+		return action(tx)
+	})
+}
+
+func withinTransactionOfConn(ctx context.Context, conn *pgx.Conn, action func(tx *Tx) error) error {
+	tx, err := conn.Begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -93,7 +99,13 @@ func (h poolHandle) GSQLClose(ctx context.Context) error {
 
 // GSQLTransact implements the [gsql.ConnectionHandle] interface.
 func (h poolHandle) GSQLTransact(ctx context.Context, action func(tx gsql.Handle) error) error {
-	tx, err := h.inner.Begin(ctx)
+	return withinTransactionOfPool(ctx, h.inner, func(tx *Tx) error {
+		return action(tx)
+	})
+}
+
+func withinTransactionOfPool(ctx context.Context, pool *pgxpool.Pool, action func(tx *Tx) error) error {
+	tx, err := pool.Begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -130,7 +142,13 @@ func (h poolConnHandle) GSQLClose(ctx context.Context) error {
 
 // GSQLTransact implements the [gsql.ConnectionHandle] interface.
 func (h poolConnHandle) GSQLTransact(ctx context.Context, action func(tx gsql.Handle) error) error {
-	tx, err := h.inner.Begin(ctx)
+	return withinTransactionOfPoolConn(ctx, h.inner, func(tx *Tx) error {
+		return action(tx)
+	})
+}
+
+func withinTransactionOfPoolConn(ctx context.Context, conn *pgxpool.Conn, action func(tx *Tx) error) error {
+	tx, err := conn.Begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -167,7 +185,7 @@ func getPreparedStatementName() string {
 	return "oblast_pgx_" + strconv.FormatUint(preparedStatementId.Add(1), 10)
 }
 
-func transact(ctx context.Context, tx pgx.Tx, action func(tx gsql.Handle) error) error {
+func transact(ctx context.Context, tx pgx.Tx, action func(tx *Tx) error) error {
 	err := action(NewTx(tx))
 	if err == nil {
 		return errext.WithCleanup(nil, "tx.Commit", tx.Commit(ctx))

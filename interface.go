@@ -45,6 +45,15 @@ func (conn *Conn) BeginTx(ctx context.Context, opts pgx.TxOptions) (*Tx, error) 
 	return maybeNewTx(tx), err
 }
 
+// WithinTransaction executes an action within a database transaction.
+// The transaction will be committed if the callback returns successfully, or rolled back otherwise.
+//
+// This is equivalent to the GSQLTransact() method of conn's [gsql.ConnectionHandle] implementation,
+// but the callback receives the concrete type [*Tx] instead of a generic [gsql.Handle].
+func (conn *Conn) WithinTransaction(ctx context.Context, action func(*Tx) error) error {
+	return withinTransactionOfConn(ctx, conn.Conn, action)
+}
+
 // Pool wraps [*pgxpool.Pool] into a [gsql.Handle].
 //
 // Because this type has [*pgxpool.Pool] as an embedded field,
@@ -94,6 +103,15 @@ func (pool *Pool) BeginTx(ctx context.Context, opts pgx.TxOptions) (*Tx, error) 
 	return maybeNewTx(tx), err
 }
 
+// WithinTransaction executes an action within a database transaction.
+// The transaction will be committed if the callback returns successfully, or rolled back otherwise.
+//
+// This is equivalent to the GSQLTransact() method of pool's [gsql.ConnectionHandle] implementation,
+// but the callback receives the concrete type [*Tx] instead of a generic [gsql.Handle].
+func (pool *Pool) WithinTransaction(ctx context.Context, action func(*Tx) error) error {
+	return withinTransactionOfPool(ctx, pool.Pool, action)
+}
+
 // PoolConn wraps [*pgxpool.Conn] into a [gsql.Handle].
 //
 // Because this type has [*pgxpool.Conn] as an embedded field,
@@ -130,6 +148,15 @@ func (conn *PoolConn) GetConn() *Conn {
 // Hijack is like [pgxpool.Conn.Conn], but wraps the resulting connection into a [gsql.Handle].
 func (conn *PoolConn) Hijack() *Conn {
 	return maybe(NewConn, conn.Conn.Hijack())
+}
+
+// WithinTransaction executes an action within a database transaction.
+// The transaction will be committed if the callback returns successfully, or rolled back otherwise.
+//
+// This is equivalent to the GSQLTransact() method of conn's [gsql.ConnectionHandle] implementation,
+// but the callback receives the concrete type [*Tx] instead of a generic [gsql.Handle].
+func (conn *PoolConn) WithinTransaction(ctx context.Context, action func(*Tx) error) error {
+	return withinTransactionOfPoolConn(ctx, conn.Conn, action)
 }
 
 // Tx wraps [pgx.Tx] into a [gsql.Handle].
