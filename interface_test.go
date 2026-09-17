@@ -53,7 +53,11 @@ func testConnectionHandle[H gsql.ConnectionHandle](t *testing.T, conn H) {
 	})
 
 	// test GSQLPrepare() + Exec()
-	_, err := execQuery(ctx, conn, `CREATE TABLE people (id BIGSERIAL PRIMARY KEY, name TEXT NOT NULL)`, nil)
+	_, err := execQuery(ctx, conn, `DROP TABLE IF EXISTS people`, nil)
+	if !assert.ErrEqual(t, err, nil) {
+		t.FailNow()
+	}
+	_, err = execQuery(ctx, conn, `CREATE TABLE people (id BIGSERIAL PRIMARY KEY, name TEXT NOT NULL)`, nil)
 	if !assert.ErrEqual(t, err, nil) {
 		t.FailNow()
 	}
